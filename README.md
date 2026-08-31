@@ -49,7 +49,7 @@ QA-Automation/
 | Phase | Name | Status |
 |-------|------|--------|
 | 0 | Repository / Environment Discovery | ✅ COMPLETE |
-| 1 | Postman Collection Forensics + Evidence Ledger | ⬜ NOT STARTED |
+| 1 | Postman Collection Forensics + Evidence Ledger | ✅ COMPLETE |
 | 2 | API Inventory + Classification | ⬜ NOT STARTED |
 | 3 | Candidate Workflow Discovery | ⬜ NOT STARTED |
 | 4 | Risk Analysis + Safety Requirement Definition | ⬜ NOT STARTED |
