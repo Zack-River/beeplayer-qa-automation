@@ -1,0 +1,19 @@
+{
+  "name": "beeplayer-qa-automation",
+  "version": "0.0.1",
+  "description": "BeePlayer Backend API — QA Automation & Performance Engineering",
+  "private": true,
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "ts-node": "^10.9.2",
+    "@types/node": "^22.0.0",
+    "prettier": "^3.3.0",
+    "eslint": "^9.9.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0"
+  }
+}

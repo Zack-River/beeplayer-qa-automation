@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Environment / secrets — NEVER commit
+.env
+.env.*
+*.secrets
+
+# Raw request-level evidence — local only; never committed directly
+# Reviewed/sanitized evidence goes to reports/reviewed-evidence/ (committed after approval)
+reports/raw-evidence/
+
+# Build artifacts
+dist/
+build/

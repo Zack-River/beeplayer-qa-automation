@@ -1,0 +1,5165 @@
+{
+  "info": {
+    "name": "BeePlayer API — Production",
+    "_postman_id": "b3e1c7d0-5a24-4f18-9c6b-1d8e2f0a7c44",
+    "description": "Complete request coverage for the **BeePlayer** NestJS API in production.\n\n```\nhttps://api.beeplayer1.com\n```\n\nThe backend mounts no global prefix — controller paths are the URL paths. Interactive Swagger lives at `/api/docs`.\n\n---\n\n### Getting started\n\n1. Select the **BeePlayer — Production** environment (`beeplayer-production.postman_environment.json`) and fill in the credential variables.\n2. Run **02 · Auth → Login — admin**. Its test script stores the JWT in `{{token}}` and `{{adminToken}}`.\n3. Everything else inherits bearer `{{token}}` unless the request pins a specific role on its Authorization tab.\n\n### Authentication model\n\nThere is no single user table. Four Prisma models can authenticate — `Admin`, `Reseller`, `User`, `Customer` — and the JWT payload carries a `type` field that `JwtStrategy.validate()` switches on to pick the right table. Authorization throughout the codebase branches on `user.type`, not on roles.\n\n| Login | Endpoint | Sets |\n| --- | --- | --- |\n| Admin / reseller | `POST /auth/login` (email + password) | `{{adminToken}}` / `{{resellerToken}}` |\n| Customer | `POST /auth/customer/login` (MAC + key **or** username + password) | `{{customerToken}}` |\n\nThe JWT is also accepted as a `token` query or body parameter, not only as a Bearer header — that is what lets `<video src>` and other proxied media requests authenticate.\n\n### Chaining requests\n\nList requests save the first returned id into a collection variable, so the folders run top to bottom without hand-copying ids:\n\n`resellerId` · `customerId` · `playlistId` · `categoryId` · `streamId` · `vodId` · `seriesId` · `episodeId` · `creditPackageId` · `iptvPackageId` · `subscriptionId` · `ticketId` · `transactionId` · `creditRequestId` · `iptvRequestId` · `bankInfoId` · `errorGroupId`\n\n### Things that will trip you up\n\n- **Unknown body fields are rejected.** The global `ValidationPipe` runs with `whitelist` + `forbidNonWhitelisted`, so any property without a matching DTO field returns 400.\n- **Every `/customers/iptv/*` route requires `playlist_id`** as a query parameter, and rejects any principal whose `type` is not `customer`.\n- **The subscription route is spelled `subcription`.** The typo is consistent across the codebase and is not a bug to route around.\n- **`/proxy` and `/video-conversion/*` return media bytes.** Send a `Range` header when testing or Postman will pull down the whole file.\n- **Body limit is 50 MB** because bank-transfer receipts are posted as base64 inside JSON.\n\n### Destructive requests\n\nThis collection points at production. `DELETE` requests and `PUT /settings/account` operate on live records — check `{{baseUrl}}` before firing them.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Guard against firing production requests at an unset base URL.",
+          "if (!pm.variables.get('baseUrl')) {",
+          "  throw new Error('baseUrl is not set — select the BeePlayer environment.');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 · Health & Diagnostics",
+      "description": "Unauthenticated probes. Use these first to confirm the production API is reachable before debugging auth.\n\n`/customers/test-iptv`, `/customers/test-vod-stream` and `/customers/test-reseller` were removed from the backend: the first two were unauthenticated and carried a live third-party panel username and password in the source, and the third created a real reseller account with a fixed password.",
+      "item": [
+        {
+          "name": "Root — hello",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": []
+            },
+            "description": "AppController root. Returns a plain-text greeting.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('API is reachable', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Video conversion health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/video-conversion/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "video-conversion",
+                "health"
+              ]
+            },
+            "description": "Reports whether the ffmpeg transcoding pipeline is up.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "IPTV packages ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/ping",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "ping"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "IPTV packages test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "test"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Customers test (no auth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/test-no-auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "test-no-auth"
+              ]
+            },
+            "description": "Diagnostic route that bypasses the JWT guard.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Customers test (auth echo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "test"
+              ]
+            },
+            "description": "Echoes back the decoded JWT principal -- the fastest way to see what `user.type` the token resolves to."
+          }
+        },
+        {
+          "name": "Swagger docs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "docs"
+              ]
+            },
+            "description": "Swagger UI (HTML). Served by the backend at /api/docs.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 · Auth",
+      "description": "Single JWT, four principal types (`admin` | `reseller` | `user` | `customer`). The payload carries a `type` field and every downstream service branches on it.\n\nEach login request below saves its token into `{{token}}` (the collection-wide bearer) **and** into a role-specific variable so you can pin a request to one role via its Authorization tab.",
+      "item": [
+        {
+          "name": "Login — admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Unified staff login. The service tries the Admin table first, then Reseller. Saves `{{adminToken}}`.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json.access_token || json.token || (json.data && json.data.access_token);",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('token', token);",
+                  "  pm.collectionVariables.set('adminToken', token);",
+                  "  console.log('Saved token to {{token}} and {{adminToken}}');",
+                  "}",
+                  "pm.test('Login returned a token', () => pm.expect(token, 'token').to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login — reseller",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Same endpoint as admin login. Saves `{{resellerToken}}`.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{resellerEmail}}\",\n  \"password\": \"{{resellerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json.access_token || json.token || (json.data && json.data.access_token);",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('token', token);",
+                  "  pm.collectionVariables.set('resellerToken', token);",
+                  "  console.log('Saved token to {{token}} and {{resellerToken}}');",
+                  "}",
+                  "pm.test('Login returned a token', () => pm.expect(token, 'token').to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login — customer (MAC + key)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/customer/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "customer",
+                "login"
+              ]
+            },
+            "description": "Set-top-box style login. `loginCustomerUnified` accepts **either** macAddress+customerKey **or** username+password. Playlist `pinHash`/`isLocked` are stripped from the response. Saves `{{customerToken}}`.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"macAddress\": \"{{customerMac}}\",\n  \"customerKey\": \"{{customerKey}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json.access_token || json.token || (json.data && json.data.access_token);",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('token', token);",
+                  "  pm.collectionVariables.set('customerToken', token);",
+                  "  console.log('Saved token to {{token}} and {{customerToken}}');",
+                  "}",
+                  "pm.test('Login returned a token', () => pm.expect(token, 'token').to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login — customer (username + password)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/customer/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "customer",
+                "login"
+              ]
+            },
+            "description": "Web-player style login. Saves `{{customerToken}}`.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{customerUsername}}\",\n  \"password\": \"{{customerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json.access_token || json.token || (json.data && json.data.access_token);",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('token', token);",
+                  "  pm.collectionVariables.set('customerToken', token);",
+                  "  console.log('Saved token to {{token}} and {{customerToken}}');",
+                  "}",
+                  "pm.test('Login returned a token', () => pm.expect(token, 'token').to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register reseller (admin only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Rejected with 403 unless `user.type === \"admin\"`. `password` must be at least 6 characters.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Reseller\",\n  \"email\": \"reseller@example.com\",\n  \"password\": \"secret123\",\n  \"companyName\": \"Example Media\",\n  \"phone\": \"+9647700000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                "user"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Me — current principal",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Returns the record `JwtStrategy.validate()` resolved, plus its `type`. Use it to confirm which table a token authenticates against."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 · Resellers",
+      "description": "Admin-facing reseller administration. The whole controller sits behind `AuthGuard(\"jwt\")`; create/delete additionally require `user.type === \"admin\"`.",
+      "item": [
+        {
+          "name": "List resellers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resellers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resellers"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Name / email / company substring",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Lowercase `active` or `suspended`. Resellers have no status column — this maps onto the `isActive` boolean.",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reseller stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resellers/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resellers",
+                "stats"
+              ]
+            },
+            "description": "Dashboard aggregate counts.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get reseller by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resellers/{{resellerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resellers",
+                "{{resellerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create reseller (admin only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resellers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resellers"
+              ]
+            },
+            "description": "201 on success. `commissionRate` is a percentage between 0 and 100.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example Reseller\",\n  \"email\": \"reseller2@example.com\",\n  \"password\": \"secret123\",\n  \"companyName\": \"Example Media\",\n  \"phone\": \"+9647700000000\",\n  \"commissionRate\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json.id || (json.data && json.data.id);",
+                  "if (id) pm.collectionVariables.set('resellerId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add credit by email",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resellers/add-credit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resellers",
+                "add-credit"
+              ]
+            },
+            "description": "Top up a reseller balance by email rather than id. Writes a Transaction row.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{resellerEmail}}\",\n  \"amount\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update reseller",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resellers/{{resellerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resellers",
+                "{{resellerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Reseller\",\n  \"companyName\": \"Updated Media\",\n  \"phone\": \"+9647711111111\",\n  \"commissionRate\": 12\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update reseller status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resellers/{{resellerId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resellers",
+                "{{resellerId}}",
+                "status"
+              ]
+            },
+            "description": "The service tests `status === \"active\"` (lowercase) and writes `isActive`. **Any other value suspends the reseller**, including `\"ACTIVE\"` — the comparison is case-sensitive.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete reseller",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resellers/{{resellerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resellers",
+                "{{resellerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 · Users",
+      "description": "Read-only admin view over end-customers, joined with their owning reseller. Whole controller is JWT-guarded.",
+      "item": [
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true
+                },
+                {
+                  "key": "resellerId",
+                  "value": "{{resellerId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "User stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "stats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get user by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{customerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 · Customers — Management",
+      "description": "Admin/reseller CRUD over the `Customer` table. A reseller only ever sees its own customers; provisioning spends reseller credit.\n\n**Route-order caveat:** the literal routes (`/customers/stats`, `/customers/playlists/:id`, …) are declared before `/customers/:id`, so they win. Keep that in mind before adding new paths.",
+      "item": [
+        {
+          "name": "Create customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            },
+            "description": "Send **exactly one** identity pair: `macAddress` + `customerKey` (set-top box) **or** `username` + `password` (web login). Supplying both, or neither, returns 400.\n\nCost: `subscription.credits` when `subscriptionId` is given, otherwise 1 credit for `creditType: ONE_YEAR` (the default) and 2 for `LIFETIME`. A reseller with too small a balance gets 400 `Insufficient credits`; admins are not charged.\n\n`resellerId` may be supplied by an admin creating on behalf of a reseller.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"viewer1\",\n  \"password\": \"secret123\",\n  \"iptvLink\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"iptvType\": \"xtream\",\n  \"subscriptionId\": \"{{subscriptionId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json.id || (json.data && json.data.id);",
+                  "if (id) pm.collectionVariables.set('customerId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "description": "CustomerStatus enum — ACTIVE / EXPIRED / SUSPENDED",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Scope is derived from the token: admins see all, resellers see their own.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Customers by reseller",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/reseller/{{resellerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "reseller",
+                "{{resellerId}}"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get customer by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"viewer1\",\n  \"macAddress\": \"00:1A:79:00:00:00\",\n  \"iptvType\": \"xtream\",\n  \"iptvLink\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update customer status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}",
+                "status"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Renew customer subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/renew",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}",
+                "renew"
+              ]
+            },
+            "description": "Extends the subscription and debits the reseller credit balance.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin reset customer password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}",
+                "password"
+              ]
+            },
+            "description": "Sets a password without knowing the current one. Distinct from the self-service change below.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"newsecret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 · Customers — Account (self)",
+      "description": "Called by the player with a `customer`-type token.",
+      "item": [
+        {
+          "name": "My info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "info"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "My dashboard stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "stats"
+              ]
+            },
+            "description": "Channel / movie / series counts across the customer playlists.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change my password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "change-password"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"secret123\",\n  \"newPassword\": \"newsecret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 · Customers — Playlists",
+      "description": "A `Playlist` is one IPTV source: an Xtream Codes panel URL or a raw M3U/M3U8 URL. Everything under the IPTV folders below needs a `playlist_id`.\n\nPlaylists can be PIN-locked (`isLocked` + `pinHash`); those two fields are stripped from login responses and the playlist is unlocked with **Verify playlist PIN**.\n\nThe `/playlists/*` routes at the end are a backwards-compatible alias kept for older clients — they delegate to the same service methods.",
+      "item": [
+        {
+          "name": "My playlists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/playlists",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "playlists"
+              ],
+              "query": [
+                {
+                  "key": "web",
+                  "value": "true",
+                  "description": "Web-player variant of the payload",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.playlists || json.data || []);",
+                  "if (list.length && list[0].id) pm.collectionVariables.set('playlistId', list[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My playlist (legacy singular)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/playlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "playlist"
+              ]
+            },
+            "description": "Older single-playlist accessor kept for legacy clients.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add playlist (self)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/playlists",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "playlists"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Panel\",\n  \"url\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"type\": \"xtream\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create playlist for a customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/playlists",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}",
+                "playlists"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Provisioned Panel\",\n  \"url\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"type\": \"xtream\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List a customer playlists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/playlists",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "{{customerId}}",
+                "playlists"
+              ],
+              "query": [
+                {
+                  "key": "web",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update playlist",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/playlists/{{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "playlists",
+                "{{playlistId}}"
+              ]
+            },
+            "description": "Send `pin` to set/replace the PIN. When a PIN already exists, `currentPin` must match. Send `isLocked: false` with the correct `currentPin` to remove the lock.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Renamed Panel\",\n  \"url\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"type\": \"xtream\",\n  \"isActive\": true,\n  \"isLocked\": false,\n  \"pin\": \"1234\",\n  \"currentPin\": \"0000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Verify playlist PIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/playlists/{{playlistId}}/verify-pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "playlists",
+                "{{playlistId}}",
+                "verify-pin"
+              ]
+            },
+            "description": "Unlocks a PIN-locked playlist for the session.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pin\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete playlist",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/playlists/{{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "playlists",
+                "{{playlistId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Debug IPTV credentials",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/debug-iptv-credentials/{{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "debug-iptv-credentials",
+                "{{playlistId}}"
+              ]
+            },
+            "description": "Shows how the backend parsed the playlist URL into Xtream username/password/host. The first thing to check when a panel returns empty categories.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Legacy — playlist action (verify-pin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/playlists/{{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "playlists",
+                "{{playlistId}}"
+              ]
+            },
+            "description": "Backwards-compatible alias. Any `action` other than `verify-pin` returns 400.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"verify-pin\",\n  \"pin\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Legacy — update playlist",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/playlists/{{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "playlists",
+                "{{playlistId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Renamed Panel\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Legacy — delete playlist",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/playlists/{{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "playlists",
+                "{{playlistId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 · Customers — Live TV",
+      "description": "`iptv.service.ts`. These reject any principal whose `type` is not `customer`.\n\nFor an Xtream playlist the service derives `player_api.php?username=…&password=…&action=get_live_categories|get_live_streams` from the playlist URL; for a raw M3U it fetches and parses the body line by line. Stream URLs ending in `.hls` are rewritten to `.m3u8` on the way out.",
+      "item": [
+        {
+          "name": "Live categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/categories?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.categories || json.data || []);",
+                  "const first = list[0];",
+                  "if (first) pm.collectionVariables.set('categoryId', first.category_id || first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Live channels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/channels?playlist_id={{playlistId}}&category_id={{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "channels"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{categoryId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.channels || json.data || []);",
+                  "const first = list[0];",
+                  "if (first) pm.collectionVariables.set('streamId', first.stream_id || first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search IPTV content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/search?playlist_id={{playlistId}}&type=live&q=news",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                },
+                {
+                  "key": "type",
+                  "value": "live",
+                  "description": "live | vod | series"
+                },
+                {
+                  "key": "q",
+                  "value": "news",
+                  "description": "Search term"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Channel groups (legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/channels/groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "channels",
+                "groups"
+              ]
+            },
+            "description": "Pre-`/iptv` channel grouping route retained for older clients.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Channels (legacy, paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/channels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "channels"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Channels by category (legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/channels/category/News",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "channels",
+                "category",
+                "News"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Channel stream URL (legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/channels/{{streamId}}/stream",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "channels",
+                "{{streamId}}",
+                "stream"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 · Customers — VOD (Movies)",
+      "description": "`vod.service.ts`. Same `playlist_id` requirement and the same `.hls` → `.m3u8` rewrite as Live TV.\n\n`/stream` returns the resolved upstream URL; `/proxy` streams the bytes back through the API so an HTTPS page can play an HTTP-only source without tripping the browser mixed-content block.",
+      "item": [
+        {
+          "name": "VOD categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/vod/categories?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "vod",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "VOD content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/vod/content?playlist_id={{playlistId}}&category_id={{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "vod",
+                "content"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{categoryId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.movies || json.data || []);",
+                  "const first = list[0];",
+                  "if (first) pm.collectionVariables.set('vodId', first.stream_id || first.vod_id || first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VOD details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/vod/{{vodId}}/details?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "vod",
+                "{{vodId}}",
+                "details"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                }
+              ]
+            },
+            "description": "Plot, cast, poster, duration — from `get_vod_info`.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "VOD stream URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/vod/{{vodId}}/stream?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "vod",
+                "{{vodId}}",
+                "stream"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "VOD proxy (bytes)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Range",
+                "value": "bytes=0-1048575",
+                "description": "Forwarded upstream so seeking works. Expect a 206 response."
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/vod/{{vodId}}/proxy?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "vod",
+                "{{vodId}}",
+                "proxy"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                }
+              ]
+            },
+            "description": "Streams the movie through the API. Postman will download the body — send a `Range` header to keep the response small while testing.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 · Customers — Series",
+      "description": "`series.service.ts`. Episode listing needs the series id; some raw-M3U playlists also need `series_name` because the parsed entries have no numeric id to key on.",
+      "item": [
+        {
+          "name": "Series categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/series/categories?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "series",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Series content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/series/content?playlist_id={{playlistId}}&category_id={{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "series",
+                "content"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{categoryId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.series || json.data || []);",
+                  "const first = list[0];",
+                  "if (first) pm.collectionVariables.set('seriesId', first.series_id || first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Series episodes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/series/{{seriesId}}/episodes?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "series",
+                "{{seriesId}}",
+                "episodes"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                },
+                {
+                  "key": "series_name",
+                  "value": "",
+                  "description": "Needed for raw-M3U playlists where episodes are matched by title",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = json.episodes || json.data || (Array.isArray(json) ? json : []);",
+                  "const first = Array.isArray(list) ? list[0] : null;",
+                  "if (first) pm.collectionVariables.set('episodeId', first.id || first.episode_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Episode stream URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/series/{{seriesId}}/episodes/{{episodeId}}/stream?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "series",
+                "{{seriesId}}",
+                "episodes",
+                "{{episodeId}}",
+                "stream"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Episode proxy (bytes)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Range",
+                "value": "bytes=0-1048575"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/iptv/series/{{seriesId}}/episodes/{{episodeId}}/proxy?playlist_id={{playlistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "customers",
+                "iptv",
+                "series",
+                "{{seriesId}}",
+                "episodes",
+                "{{episodeId}}",
+                "proxy"
+              ],
+              "query": [
+                {
+                  "key": "playlist_id",
+                  "value": "{{playlistId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 · Credit Packages & Transactions",
+      "description": "The admin → reseller half of the credit economy: catalogue, purchases, bank-transfer receipts and the credit-request approval queue.\n\nBank-transfer receipts are posted as base64 inside JSON, which is why the body parser limit is 50 MB.\n\n**Route-order caveat:** `GET /credit-packages/:id` is declared before the literal `transactions/*` and `credit-requests` routes, so ids that collide with those words will not resolve as you expect.",
+      "item": [
+        {
+          "name": "List credit packages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages"
+              ]
+            },
+            "description": "Public catalogue — no guard on this route.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.data || []);",
+                  "if (list.length && list[0].id) pm.collectionVariables.set('creditPackageId', list[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get credit package",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/{{creditPackageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "{{creditPackageId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create credit package",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Starter 100\",\n  \"credits\": 100,\n  \"price\": 50,\n  \"description\": \"100 credits for new resellers\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update credit package",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/{{creditPackageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "{{creditPackageId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Starter 100\",\n  \"credits\": 120,\n  \"price\": 55,\n  \"description\": \"Now with 20 bonus credits\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete credit package",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/{{creditPackageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "{{creditPackageId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Revenue stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "stats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bank information (payment info)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/bank-information",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "bank-information"
+              ]
+            },
+            "description": "Unguarded convenience route so the purchase screen can show where to wire money.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Purchase credit package",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/purchase",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "purchase"
+              ]
+            },
+            "description": "`bankTransferReceipt` is a base64 data URI. Creates a PENDING transaction that an admin then approves.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resellerId\": \"{{resellerId}}\",\n  \"creditPackageId\": \"{{creditPackageId}}\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"notes\": \"Wired from Bank X\",\n  \"bankTransferReceipt\": \"data:image/png;base64,iVBORw0KGgo=\",\n  \"bankTransferDate\": \"2026-08-18\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json.id || (json.transaction && json.transaction.id);",
+                  "if (id) pm.collectionVariables.set('transactionId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pending bank transfers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/pending-bank-transfers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "pending-bank-transfers"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "All bank transfers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/bank-transfers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "bank-transfers"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "description": "PENDING | COMPLETED | REJECTED",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "All transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/transactions/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "transactions",
+                "all"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Transactions by reseller",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/transactions/reseller/{{resellerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "transactions",
+                "reseller",
+                "{{resellerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update transaction status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/transactions/{{transactionId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "transactions",
+                "{{transactionId}}",
+                "status"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"adminNotes\": \"Receipt verified\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create credit request (reseller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/credit-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "credit-requests"
+              ]
+            },
+            "description": "Rejected with 401 unless `user.type === \"reseller\"`.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credits\": 100,\n  \"creditPackageId\": \"{{creditPackageId}}\",\n  \"amount\": 50,\n  \"notes\": \"Monthly top-up\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json.id || (json.request && json.request.id);",
+                  "if (id) pm.collectionVariables.set('creditRequestId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List credit requests (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/credit-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "credit-requests"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Process credit request (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/credit-requests/{{creditRequestId}}/process",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "credit-requests",
+                "{{creditRequestId}}",
+                "process"
+              ]
+            },
+            "description": "`action` is `approve` or `reject`.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"approve\",\n  \"adminNotes\": \"Approved after receipt check\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Process reseller credit request (by email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/credit-packages/reseller-credit-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "credit-packages",
+                "reseller-credit-request"
+              ]
+            },
+            "description": "Admin-initiated grant keyed on the reseller email rather than a request id.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resellerEmail\": \"{{resellerEmail}}\",\n  \"credits\": 100,\n  \"duration\": \"1_MONTH\",\n  \"notes\": \"Manual grant\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 · IPTV Packages & Requests",
+      "description": "The subscription products a reseller can request for its customers, plus the request/approval queue (`IptvRequest`).\n\n**Route-order caveat:** `GET /iptv-packages/:id` is declared after `test`, `ping`, `stats` and `requests`, so those literals resolve first.",
+      "item": [
+        {
+          "name": "List IPTV packages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages"
+              ]
+            },
+            "description": "Public catalogue.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.data || []);",
+                  "if (list.length && list[0].id) pm.collectionVariables.set('iptvPackageId', list[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get IPTV package",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/{{iptvPackageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "{{iptvPackageId}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Create IPTV package",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages"
+              ]
+            },
+            "description": "`duration` is in months. `features` is a string array.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"12 Months Premium\",\n  \"description\": \"Full catalogue, 12 months\",\n  \"price\": 120,\n  \"duration\": 12,\n  \"features\": [\n    \"Live TV\",\n    \"VOD\",\n    \"Series\",\n    \"4K\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update IPTV package",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/{{iptvPackageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "{{iptvPackageId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"12 Months Premium\",\n  \"price\": 130,\n  \"duration\": 12,\n  \"features\": [\n    \"Live TV\",\n    \"VOD\",\n    \"Series\",\n    \"4K\",\n    \"Catch-up\"\n  ],\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete IPTV package",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/{{iptvPackageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "{{iptvPackageId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "IPTV stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "stats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create IPTV request (reseller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "requests"
+              ]
+            },
+            "description": "Rejected with 401 unless `user.type === \"reseller\"`.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packageId\": \"{{iptvPackageId}}\",\n  \"duration\": 12,\n  \"notes\": \"For a new customer batch\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json.id || (json.request && json.request.id);",
+                  "if (id) pm.collectionVariables.set('iptvRequestId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List IPTV requests (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "requests"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "description": "PENDING | APPROVED | REJECTED",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "My IPTV requests (reseller)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/requests/reseller",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "requests",
+                "reseller"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Process IPTV request (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/iptv-packages/requests/{{iptvRequestId}}/process",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "iptv-packages",
+                "requests",
+                "{{iptvRequestId}}",
+                "process"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"approve\",\n  \"adminNotes\": \"Approved\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 · Subscriptions (`subcription`)",
+      "description": "Subscription plans a customer can be provisioned onto.\n\nThe route and module name are misspelled `subcription` throughout the codebase — that is deliberate and consistent; do not \"fix\" it in a client.",
+      "item": [
+        {
+          "name": "List subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subcription",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subcription"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.data || []);",
+                  "if (list.length && list[0].id) pm.collectionVariables.set('subscriptionId', list[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subcription/{{subscriptionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subcription",
+                "{{subscriptionId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subcription",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subcription"
+              ]
+            },
+            "description": "`duration` is in months; `credits` is what a reseller is charged.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"1 Month\",\n  \"credits\": 1,\n  \"duration\": 1,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update subscription",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subcription/{{subscriptionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subcription",
+                "{{subscriptionId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"1 Month\",\n  \"credits\": 1,\n  \"duration\": 1,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete subscription",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subcription/{{subscriptionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subcription",
+                "{{subscriptionId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 · Support Tickets",
+      "description": "Reseller ↔ admin support threads. Resellers see only their own tickets; admins see all and can create on behalf of a reseller via `resellerId`.\n\nEnums — status: `OPEN` `IN_PROGRESS` `RESOLVED` `CLOSED`; priority: `LOW` `MEDIUM` `HIGH` `CRITICAL`; category: `TECHNICAL` `BILLING` `ACCOUNT` `GENERAL`.",
+      "item": [
+        {
+          "name": "Create ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Streams buffering on channel X\",\n  \"description\": \"Since this morning, channel X buffers every few seconds.\",\n  \"priority\": \"HIGH\",\n  \"category\": \"TECHNICAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json.id || (json.ticket && json.ticket.id);",
+                  "if (id) pm.collectionVariables.set('ticketId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN",
+                  "disabled": true
+                },
+                {
+                  "key": "priority",
+                  "value": "HIGH",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "TECHNICAL",
+                  "disabled": true
+                },
+                {
+                  "key": "resellerId",
+                  "value": "{{resellerId}}",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ticket stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "stats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tickets by reseller",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/reseller/{{resellerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "reseller",
+                "{{resellerId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get ticket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/{{ticketId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "{{ticketId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update ticket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/{{ticketId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "{{ticketId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Streams buffering on channel X\",\n  \"description\": \"Updated details\",\n  \"priority\": \"CRITICAL\",\n  \"category\": \"TECHNICAL\",\n  \"status\": \"IN_PROGRESS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update ticket status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/{{ticketId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "{{ticketId}}",
+                "status"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update ticket priority",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/{{ticketId}}/priority",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "{{ticketId}}",
+                "priority"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priority\": \"CRITICAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add ticket response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/{{ticketId}}/responses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "{{ticketId}}",
+                "responses"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"We are looking into it — can you confirm the panel URL?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List ticket responses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/{{ticketId}}/responses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "{{ticketId}}",
+                "responses"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete ticket",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support-tickets/{{ticketId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "support-tickets",
+                "{{ticketId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 · Bank Information",
+      "description": "Admin-managed bank accounts shown to resellers on the purchase screen. The whole controller is JWT-guarded; `GET /bank-information/active` skips the admin check because the payment screen needs it.",
+      "item": [
+        {
+          "name": "List bank accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bank-information",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bank-information"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = Array.isArray(json) ? json : (json.data || []);",
+                  "if (list.length && list[0].id) pm.collectionVariables.set('bankInfoId', list[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Active bank account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bank-information/active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bank-information",
+                "active"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get bank account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bank-information/{{bankInfoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bank-information",
+                "{{bankInfoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create bank account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bank-information",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bank-information"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"Example Bank\",\n  \"accountName\": \"BeePlayer LLC\",\n  \"accountNumber\": \"1234567890\",\n  \"iban\": \"IQ00EXAM1234567890\",\n  \"swiftCode\": \"EXAMIQBA\",\n  \"branchCode\": \"001\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update bank account",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bank-information/{{bankInfoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bank-information",
+                "{{bankInfoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"Example Bank\",\n  \"accountNumber\": \"0987654321\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set bank account active",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bank-information/{{bankInfoId}}/set-active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bank-information",
+                "{{bankInfoId}}",
+                "set-active"
+              ]
+            },
+            "description": "Promotes one account to the active one. No body.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete bank account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bank-information/{{bankInfoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bank-information",
+                "{{bankInfoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 · Settings",
+      "description": "Self-service profile for the authenticated principal — works for admin and reseller tokens alike, resolving against whichever table the JWT `type` points to.",
+      "item": [
+        {
+          "name": "Get profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/settings/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "profile"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "profile"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@example.com\",\n  \"companyName\": \"Updated Media\",\n  \"phone\": \"+9647711111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settings/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "password"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"secret123\",\n  \"newPassword\": \"newsecret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Account stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/settings/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "stats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/settings/account",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings",
+                "account"
+              ]
+            },
+            "description": "Deletes the authenticated account. Destructive — do not run against production data casually.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{resellerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 · Activity Logs",
+      "description": "Admin-only audit trail. There is no RolesGuard in this repo, so admin is enforced inline — a reseller token gets a 403.",
+      "item": [
+        {
+          "name": "List activity logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/activity-logs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "activity-logs"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "",
+                  "description": "ActivityAction enum",
+                  "disabled": true
+                },
+                {
+                  "key": "actorType",
+                  "value": "",
+                  "description": "ActorType enum",
+                  "disabled": true
+                },
+                {
+                  "key": "targetType",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01",
+                  "description": "ISO date",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31",
+                  "description": "ISO date",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 · Error Reports",
+      "description": "`POST /error-reports/ingest` is **public by design**: the most valuable client errors are login and auth failures, which by definition have no valid token. A token is used to attribute the report when present, but a bad one never rejects the request. Abuse is bounded by the throttler (30/min per `deviceId`, 300/min per IP), a 20-event batch cap and a 64 KB body limit.\n\nAn unknown field rejects the **whole batch** with 400 — field names are case-sensitive and custom data belongs in `context`.\n\nThe read/manage routes below are admin-only: reports carry stack traces and cross-tenant customer identifiers.\n\nSee `docs/beeplayer-error-reports.postman_collection.json` for the full field reference and client integration rules.",
+      "item": [
+        {
+          "name": "Ingest errors (public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/error-reports/ingest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "error-reports",
+                "ingest"
+              ]
+            },
+            "description": "Returns 202 `{ \"accepted\": n }`. Storage is asynchronous.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"source\": \"NATIVE_APP\",\n      \"errorType\": \"PlaybackError\",\n      \"message\": \"HLS manifest failed to load\",\n      \"level\": \"ERROR\",\n      \"platform\": \"android_tv\",\n      \"appVersion\": \"1.4.2\",\n      \"deviceId\": \"stb-7f3a91\",\n      \"contentType\": \"live\",\n      \"httpStatus\": 502,\n      \"context\": {\n        \"channel\": \"BBC One\"\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Accepted', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error stats (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/error-reports/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "error-reports",
+                "stats"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List error groups (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/error-reports/groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "error-reports",
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN",
+                  "disabled": true
+                },
+                {
+                  "key": "source",
+                  "value": "NATIVE_APP",
+                  "disabled": true
+                },
+                {
+                  "key": "level",
+                  "value": "ERROR",
+                  "disabled": true
+                },
+                {
+                  "key": "platform",
+                  "value": "android_tv",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Identical errors are grouped server-side into one row with a count.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const list = json.items || json.data || (Array.isArray(json) ? json : []);",
+                  "if (list.length && list[0].id) pm.collectionVariables.set('errorGroupId', list[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get error group (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/error-reports/groups/{{errorGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "error-reports",
+                "groups",
+                "{{errorGroupId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update error group (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/error-reports/groups/{{errorGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "error-reports",
+                "groups",
+                "{{errorGroupId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"adminNote\": \"Upstream panel fixed the manifest\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete error group (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/error-reports/groups/{{errorGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "error-reports",
+                "groups",
+                "{{errorGroupId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 · Video Conversion (streaming)",
+      "description": "ffmpeg-backed passthrough/transcode. MKV sources are converted to H.264/AAC MP4 on the fly so iOS can play them; anything else is proxied with `Range` support.\n\n`url` must be **URL-encoded**. These routes use `VideoAuthGuard`, which also accepts the JWT as a `token` query parameter — that is how `<video src>` tags authenticate, since they cannot set an Authorization header.",
+      "item": [
+        {
+          "name": "VOD stream",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Range",
+                "value": "bytes=0-1048575"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/video-conversion/vod/stream?url=http%3A%2F%2Fpanel.example.com%2Fmovie%2Fu%2Fp%2F12345.mkv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "video-conversion",
+                "vod",
+                "stream"
+              ],
+              "query": [
+                {
+                  "key": "url",
+                  "value": "http%3A%2F%2Fpanel.example.com%2Fmovie%2Fu%2Fp%2F12345.mkv",
+                  "description": "URL-encoded upstream source"
+                },
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "description": "Alternative to the Authorization header, for <video src> tags",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Series episode stream",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Range",
+                "value": "bytes=0-1048575"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/video-conversion/series/stream?url=http%3A%2F%2Fpanel.example.com%2Fseries%2Fu%2Fp%2F67890.mkv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "video-conversion",
+                "series",
+                "stream"
+              ],
+              "query": [
+                {
+                  "key": "url",
+                  "value": "http%3A%2F%2Fpanel.example.com%2Fseries%2Fu%2Fp%2F67890.mkv",
+                  "description": "URL-encoded upstream source"
+                },
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Test proxy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Range",
+                "value": "bytes=0-1048575"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/video-conversion/test?url=http%3A%2F%2Fpanel.example.com%2Fmovie%2Fu%2Fp%2F12345.mp4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "video-conversion",
+                "test"
+              ],
+              "query": [
+                {
+                  "key": "url",
+                  "value": "http%3A%2F%2Fpanel.example.com%2Fmovie%2Fu%2Fp%2F12345.mp4"
+                }
+              ]
+            },
+            "description": "Checks whether an upstream URL is reachable from the server. Now behind `VideoAuthGuard` -- it used to be unauthenticated, which made the API a public open proxy. The guard accepts the JWT as a `token` query parameter, so VLC and browser testing still work.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{customerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 · Uploads",
+      "description": "Serves stored bank-transfer receipt files. JWT-guarded; content type is inferred from the file extension.",
+      "item": [
+        {
+          "name": "Serve receipt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/receipts/receipt-example.png",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads",
+                "receipts",
+                "receipt-example.png"
+              ]
+            },
+            "description": "Replace the filename with the one stored on the transaction record.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.beeplayer1.com",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resellerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "resellerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "playlistId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "streamId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "vodId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "seriesId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "episodeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "creditPackageId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "creditRequestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transactionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "iptvPackageId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "iptvRequestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "subscriptionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ticketId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bankInfoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "errorGroupId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
