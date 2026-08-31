@@ -54,7 +54,7 @@ QA-Automation/
 | 3 | Candidate Workflow Discovery | ✅ COMPLETE |
 | 4 | Risk Analysis + Safety Requirement Definition | ✅ COMPLETE |
 | 5 | Test Strategy + Design | ✅ COMPLETE |
-| 6 | Architecture Decisions + Final Scaffold | ⬜ NOT STARTED |
+| 6 | Architecture Decisions + Final Scaffold | ✅ COMPLETE |
 | 7 | Parser + Framework Self-Tests | ⬜ NOT STARTED |
 | 8 | Core Infrastructure + Safety Gate Implementation | ⬜ NOT STARTED |
 | 9 | Functional + Contract Testing | ⬜ NOT STARTED |
