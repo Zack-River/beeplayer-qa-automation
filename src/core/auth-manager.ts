@@ -33,4 +33,30 @@ export class AuthManager {
 
     return { token, type: 'admin' };
   }
+
+  public static async loginCustomer(request: APIRequestContext, baseUrl: string): Promise<AuthContext> {
+    const username = process.env.CUSTOMER_USERNAME;
+    const password = process.env.CUSTOMER_PASSWORD;
+
+    if (!username || !password) {
+      throw new Error(`[DATA_FAILURE] Missing Customer credentials in environment.`);
+    }
+
+    const response = await request.post(`${baseUrl}/auth/customer/login`, {
+      data: { username, password }
+    });
+
+    if (!response.ok()) {
+      throw new Error(`[PRODUCT_FAILURE] Customer login failed: ${response.status()}`);
+    }
+
+    const json = await response.json();
+    const token = json.access_token || json.token || (json.data && json.data.access_token);
+
+    if (!token) {
+      throw new Error(`[PRODUCT_FAILURE] Token extraction failed for Customer login.`);
+    }
+
+    return { token, type: 'customer' };
+  }
 }

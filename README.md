@@ -58,7 +58,7 @@ QA-Automation/
 | 7 | Parser + Framework Self-Tests | ✅ COMPLETE |
 | 8 | Core Infrastructure + Safety Gate Implementation | ✅ COMPLETE |
 | 9 | Functional + Contract Testing | ✅ COMPLETE |
-| 10 | Workflow Testing | ⬜ NOT STARTED |
+| 10 | Workflow Testing | ✅ COMPLETE |
 | 11 | Functional Exit Gate | ⬜ NOT STARTED |
 | 12 | Performance Readiness / GO-NO-GO Gate | ⬜ NOT STARTED |
 | 13 | Single-User Baseline | ⬜ NOT STARTED |
