@@ -66,7 +66,7 @@ QA-Automation/
 | 15 | Performance Analysis | ✅ COMPLETE |
 | 16 | Defect / Finding Analysis | ✅ COMPLETE |
 | 17 | Final Reporting | ✅ COMPLETE |
-| 18 | skills.md Compliance Audit | ⬜ NOT STARTED |
+| 18 | skills.md Compliance Audit | ✅ COMPLETE |
 | 19 | Clean-Room Verification + Final Handover | ⬜ NOT STARTED |
 
 ---
