@@ -52,7 +52,7 @@ QA-Automation/
 | 1 | Postman Collection Forensics + Evidence Ledger | ✅ COMPLETE |
 | 2 | API Inventory + Classification | ✅ COMPLETE |
 | 3 | Candidate Workflow Discovery | ✅ COMPLETE |
-| 4 | Risk Analysis + Safety Requirement Definition | ⬜ NOT STARTED |
+| 4 | Risk Analysis + Safety Requirement Definition | ✅ COMPLETE |
 | 5 | Test Strategy + Design | ⬜ NOT STARTED |
 | 6 | Architecture Decisions + Final Scaffold | ⬜ NOT STARTED |
 | 7 | Parser + Framework Self-Tests | ⬜ NOT STARTED |
