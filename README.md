@@ -61,7 +61,7 @@ QA-Automation/
 | 10 | Workflow Testing | ✅ COMPLETE |
 | 11 | Functional Exit Gate | ✅ COMPLETE |
 | 12 | Performance Readiness / GO-NO-GO Gate | ✅ COMPLETE |
-| 13 | Single-User Baseline | ⬜ NOT STARTED |
+| 13 | Single-User Baseline | ✅ COMPLETE |
 | 14 | 20-VU Load Test | ⬜ NOT STARTED |
 | 15 | Performance Analysis | ⬜ NOT STARTED |
 | 16 | Defect / Finding Analysis | ⬜ NOT STARTED |
