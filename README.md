@@ -51,7 +51,7 @@ QA-Automation/
 | 0 | Repository / Environment Discovery | ✅ COMPLETE |
 | 1 | Postman Collection Forensics + Evidence Ledger | ✅ COMPLETE |
 | 2 | API Inventory + Classification | ✅ COMPLETE |
-| 3 | Candidate Workflow Discovery | ⬜ NOT STARTED |
+| 3 | Candidate Workflow Discovery | ✅ COMPLETE |
 | 4 | Risk Analysis + Safety Requirement Definition | ⬜ NOT STARTED |
 | 5 | Test Strategy + Design | ⬜ NOT STARTED |
 | 6 | Architecture Decisions + Final Scaffold | ⬜ NOT STARTED |
