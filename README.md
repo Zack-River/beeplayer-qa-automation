@@ -53,7 +53,7 @@ QA-Automation/
 | 2 | API Inventory + Classification | ✅ COMPLETE |
 | 3 | Candidate Workflow Discovery | ✅ COMPLETE |
 | 4 | Risk Analysis + Safety Requirement Definition | ✅ COMPLETE |
-| 5 | Test Strategy + Design | ⬜ NOT STARTED |
+| 5 | Test Strategy + Design | ✅ COMPLETE |
 | 6 | Architecture Decisions + Final Scaffold | ⬜ NOT STARTED |
 | 7 | Parser + Framework Self-Tests | ⬜ NOT STARTED |
 | 8 | Core Infrastructure + Safety Gate Implementation | ⬜ NOT STARTED |
