@@ -65,7 +65,7 @@ QA-Automation/
 | 14 | 20-VU Load Test | ✅ COMPLETE |
 | 15 | Performance Analysis | ✅ COMPLETE |
 | 16 | Defect / Finding Analysis | ✅ COMPLETE |
-| 17 | Final Reporting | ⬜ NOT STARTED |
+| 17 | Final Reporting | ✅ COMPLETE |
 | 18 | skills.md Compliance Audit | ⬜ NOT STARTED |
 | 19 | Clean-Room Verification + Final Handover | ⬜ NOT STARTED |
 
