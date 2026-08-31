@@ -1,0 +1,1103 @@
+[
+  {
+    "id": "001",
+    "folder": "01 · Health & Diagnostics",
+    "name": "Root — hello",
+    "method": "GET",
+    "url": "{{baseUrl}}/",
+    "auth": "noauth"
+  },
+  {
+    "id": "002",
+    "folder": "01 · Health & Diagnostics",
+    "name": "Video conversion health",
+    "method": "GET",
+    "url": "{{baseUrl}}/video-conversion/health",
+    "auth": "noauth"
+  },
+  {
+    "id": "003",
+    "folder": "01 · Health & Diagnostics",
+    "name": "IPTV packages ping",
+    "method": "GET",
+    "url": "{{baseUrl}}/iptv-packages/ping",
+    "auth": "noauth"
+  },
+  {
+    "id": "004",
+    "folder": "01 · Health & Diagnostics",
+    "name": "IPTV packages test",
+    "method": "GET",
+    "url": "{{baseUrl}}/iptv-packages/test",
+    "auth": "noauth"
+  },
+  {
+    "id": "005",
+    "folder": "01 · Health & Diagnostics",
+    "name": "Customers test (no auth)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/test-no-auth",
+    "auth": "noauth"
+  },
+  {
+    "id": "006",
+    "folder": "01 · Health & Diagnostics",
+    "name": "Customers test (auth echo)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/test",
+    "auth": "none"
+  },
+  {
+    "id": "007",
+    "folder": "01 · Health & Diagnostics",
+    "name": "Swagger docs",
+    "method": "GET",
+    "url": "{{baseUrl}}/api/docs",
+    "auth": "noauth"
+  },
+  {
+    "id": "008",
+    "folder": "02 · Auth",
+    "name": "Login — admin",
+    "method": "POST",
+    "url": "{{baseUrl}}/auth/login",
+    "auth": "noauth",
+    "body": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+  },
+  {
+    "id": "009",
+    "folder": "02 · Auth",
+    "name": "Login — reseller",
+    "method": "POST",
+    "url": "{{baseUrl}}/auth/login",
+    "auth": "noauth",
+    "body": "{\n  \"email\": \"{{resellerEmail}}\",\n  \"password\": \"{{resellerPassword}}\"\n}"
+  },
+  {
+    "id": "010",
+    "folder": "02 · Auth",
+    "name": "Login — customer (MAC + key)",
+    "method": "POST",
+    "url": "{{baseUrl}}/auth/customer/login",
+    "auth": "noauth",
+    "body": "{\n  \"macAddress\": \"{{customerMac}}\",\n  \"customerKey\": \"{{customerKey}}\"\n}"
+  },
+  {
+    "id": "011",
+    "folder": "02 · Auth",
+    "name": "Login — customer (username + password)",
+    "method": "POST",
+    "url": "{{baseUrl}}/auth/customer/login",
+    "auth": "noauth",
+    "body": "{\n  \"username\": \"{{customerUsername}}\",\n  \"password\": \"{{customerPassword}}\"\n}"
+  },
+  {
+    "id": "012",
+    "folder": "02 · Auth",
+    "name": "Register reseller (admin only)",
+    "method": "POST",
+    "url": "{{baseUrl}}/auth/register",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"New Reseller\",\n  \"email\": \"reseller@example.com\",\n  \"password\": \"secret123\",\n  \"companyName\": \"Example Media\",\n  \"phone\": \"+9647700000000\"\n}"
+  },
+  {
+    "id": "013",
+    "folder": "02 · Auth",
+    "name": "Register user",
+    "method": "POST",
+    "url": "{{baseUrl}}/auth/register/user",
+    "auth": "noauth",
+    "body": "{\n  \"name\": \"New User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\"\n}"
+  },
+  {
+    "id": "014",
+    "folder": "02 · Auth",
+    "name": "Me — current principal",
+    "method": "GET",
+    "url": "{{baseUrl}}/auth/me",
+    "auth": "none"
+  },
+  {
+    "id": "015",
+    "folder": "03 · Resellers",
+    "name": "List resellers",
+    "method": "GET",
+    "url": "{{baseUrl}}/resellers",
+    "auth": "bearer"
+  },
+  {
+    "id": "016",
+    "folder": "03 · Resellers",
+    "name": "Reseller stats",
+    "method": "GET",
+    "url": "{{baseUrl}}/resellers/stats",
+    "auth": "bearer"
+  },
+  {
+    "id": "017",
+    "folder": "03 · Resellers",
+    "name": "Get reseller by id",
+    "method": "GET",
+    "url": "{{baseUrl}}/resellers/{{resellerId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "018",
+    "folder": "03 · Resellers",
+    "name": "Create reseller (admin only)",
+    "method": "POST",
+    "url": "{{baseUrl}}/resellers",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"Example Reseller\",\n  \"email\": \"reseller2@example.com\",\n  \"password\": \"secret123\",\n  \"companyName\": \"Example Media\",\n  \"phone\": \"+9647700000000\",\n  \"commissionRate\": 10\n}"
+  },
+  {
+    "id": "019",
+    "folder": "03 · Resellers",
+    "name": "Add credit by email",
+    "method": "PUT",
+    "url": "{{baseUrl}}/resellers/add-credit",
+    "auth": "bearer",
+    "body": "{\n  \"email\": \"{{resellerEmail}}\",\n  \"amount\": 100\n}"
+  },
+  {
+    "id": "020",
+    "folder": "03 · Resellers",
+    "name": "Update reseller",
+    "method": "PUT",
+    "url": "{{baseUrl}}/resellers/{{resellerId}}",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"Updated Reseller\",\n  \"companyName\": \"Updated Media\",\n  \"phone\": \"+9647711111111\",\n  \"commissionRate\": 12\n}"
+  },
+  {
+    "id": "021",
+    "folder": "03 · Resellers",
+    "name": "Update reseller status",
+    "method": "PUT",
+    "url": "{{baseUrl}}/resellers/{{resellerId}}/status",
+    "auth": "bearer",
+    "body": "{\n  \"status\": \"active\"\n}"
+  },
+  {
+    "id": "022",
+    "folder": "03 · Resellers",
+    "name": "Delete reseller",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/resellers/{{resellerId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "023",
+    "folder": "04 · Users",
+    "name": "List users",
+    "method": "GET",
+    "url": "{{baseUrl}}/users",
+    "auth": "bearer"
+  },
+  {
+    "id": "024",
+    "folder": "04 · Users",
+    "name": "User stats",
+    "method": "GET",
+    "url": "{{baseUrl}}/users/stats",
+    "auth": "bearer"
+  },
+  {
+    "id": "025",
+    "folder": "04 · Users",
+    "name": "Get user by id",
+    "method": "GET",
+    "url": "{{baseUrl}}/users/{{customerId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "026",
+    "folder": "05 · Customers — Management",
+    "name": "Create customer",
+    "method": "POST",
+    "url": "{{baseUrl}}/customers",
+    "auth": "bearer",
+    "body": "{\n  \"username\": \"viewer1\",\n  \"password\": \"secret123\",\n  \"iptvLink\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"iptvType\": \"xtream\",\n  \"subscriptionId\": \"{{subscriptionId}}\"\n}"
+  },
+  {
+    "id": "027",
+    "folder": "05 · Customers — Management",
+    "name": "List customers",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers",
+    "auth": "bearer"
+  },
+  {
+    "id": "028",
+    "folder": "05 · Customers — Management",
+    "name": "Customers by reseller",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/reseller/{{resellerId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "029",
+    "folder": "05 · Customers — Management",
+    "name": "Get customer by id",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/{{customerId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "030",
+    "folder": "05 · Customers — Management",
+    "name": "Update customer",
+    "method": "PUT",
+    "url": "{{baseUrl}}/customers/{{customerId}}",
+    "auth": "bearer",
+    "body": "{\n  \"username\": \"viewer1\",\n  \"macAddress\": \"00:1A:79:00:00:00\",\n  \"iptvType\": \"xtream\",\n  \"iptvLink\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"status\": \"ACTIVE\"\n}"
+  },
+  {
+    "id": "031",
+    "folder": "05 · Customers — Management",
+    "name": "Update customer status",
+    "method": "PUT",
+    "url": "{{baseUrl}}/customers/{{customerId}}/status",
+    "auth": "bearer",
+    "body": "{\n  \"status\": \"ACTIVE\"\n}"
+  },
+  {
+    "id": "032",
+    "folder": "05 · Customers — Management",
+    "name": "Renew customer subscription",
+    "method": "POST",
+    "url": "{{baseUrl}}/customers/{{customerId}}/renew",
+    "auth": "bearer"
+  },
+  {
+    "id": "033",
+    "folder": "05 · Customers — Management",
+    "name": "Admin reset customer password",
+    "method": "PUT",
+    "url": "{{baseUrl}}/customers/{{customerId}}/password",
+    "auth": "bearer",
+    "body": "{\n  \"newPassword\": \"newsecret123\"\n}"
+  },
+  {
+    "id": "034",
+    "folder": "05 · Customers — Management",
+    "name": "Delete customer",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/customers/{{customerId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "035",
+    "folder": "06 · Customers — Account (self)",
+    "name": "My info",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/info",
+    "auth": "bearer"
+  },
+  {
+    "id": "036",
+    "folder": "06 · Customers — Account (self)",
+    "name": "My dashboard stats",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/stats",
+    "auth": "bearer"
+  },
+  {
+    "id": "037",
+    "folder": "06 · Customers — Account (self)",
+    "name": "Change my password",
+    "method": "PUT",
+    "url": "{{baseUrl}}/customers/change-password",
+    "auth": "bearer",
+    "body": "{\n  \"currentPassword\": \"secret123\",\n  \"newPassword\": \"newsecret123\"\n}"
+  },
+  {
+    "id": "038",
+    "folder": "07 · Customers — Playlists",
+    "name": "My playlists",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/playlists",
+    "auth": "bearer"
+  },
+  {
+    "id": "039",
+    "folder": "07 · Customers — Playlists",
+    "name": "My playlist (legacy singular)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/playlist",
+    "auth": "bearer"
+  },
+  {
+    "id": "040",
+    "folder": "07 · Customers — Playlists",
+    "name": "Add playlist (self)",
+    "method": "POST",
+    "url": "{{baseUrl}}/customers/playlists",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"My Panel\",\n  \"url\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"type\": \"xtream\"\n}"
+  },
+  {
+    "id": "041",
+    "folder": "07 · Customers — Playlists",
+    "name": "Create playlist for a customer",
+    "method": "POST",
+    "url": "{{baseUrl}}/customers/{{customerId}}/playlists",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"Provisioned Panel\",\n  \"url\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"type\": \"xtream\"\n}"
+  },
+  {
+    "id": "042",
+    "folder": "07 · Customers — Playlists",
+    "name": "List a customer playlists",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/{{customerId}}/playlists",
+    "auth": "bearer"
+  },
+  {
+    "id": "043",
+    "folder": "07 · Customers — Playlists",
+    "name": "Update playlist",
+    "method": "PUT",
+    "url": "{{baseUrl}}/customers/playlists/{{playlistId}}",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"Renamed Panel\",\n  \"url\": \"http://panel.example.com/get.php?username=u&password=p&type=m3u_plus\",\n  \"type\": \"xtream\",\n  \"isActive\": true,\n  \"isLocked\": false,\n  \"pin\": \"1234\",\n  \"currentPin\": \"0000\"\n}"
+  },
+  {
+    "id": "044",
+    "folder": "07 · Customers — Playlists",
+    "name": "Verify playlist PIN",
+    "method": "POST",
+    "url": "{{baseUrl}}/customers/playlists/{{playlistId}}/verify-pin",
+    "auth": "bearer",
+    "body": "{\n  \"pin\": \"1234\"\n}"
+  },
+  {
+    "id": "045",
+    "folder": "07 · Customers — Playlists",
+    "name": "Delete playlist",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/customers/playlists/{{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "046",
+    "folder": "07 · Customers — Playlists",
+    "name": "Debug IPTV credentials",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/debug-iptv-credentials/{{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "047",
+    "folder": "07 · Customers — Playlists",
+    "name": "Legacy — playlist action (verify-pin)",
+    "method": "POST",
+    "url": "{{baseUrl}}/playlists/{{playlistId}}",
+    "auth": "bearer",
+    "body": "{\n  \"action\": \"verify-pin\",\n  \"pin\": \"1234\"\n}"
+  },
+  {
+    "id": "048",
+    "folder": "07 · Customers — Playlists",
+    "name": "Legacy — update playlist",
+    "method": "PUT",
+    "url": "{{baseUrl}}/playlists/{{playlistId}}",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"Renamed Panel\",\n  \"isActive\": true\n}"
+  },
+  {
+    "id": "049",
+    "folder": "07 · Customers — Playlists",
+    "name": "Legacy — delete playlist",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/playlists/{{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "050",
+    "folder": "08 · Customers — Live TV",
+    "name": "Live categories",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/categories?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "051",
+    "folder": "08 · Customers — Live TV",
+    "name": "Live channels",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/channels?playlist_id={{playlistId}}&category_id={{categoryId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "052",
+    "folder": "08 · Customers — Live TV",
+    "name": "Search IPTV content",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/search?playlist_id={{playlistId}}&type=live&q=news",
+    "auth": "bearer"
+  },
+  {
+    "id": "053",
+    "folder": "08 · Customers — Live TV",
+    "name": "Channel groups (legacy)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/channels/groups",
+    "auth": "bearer"
+  },
+  {
+    "id": "054",
+    "folder": "08 · Customers — Live TV",
+    "name": "Channels (legacy, paginated)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/channels",
+    "auth": "bearer"
+  },
+  {
+    "id": "055",
+    "folder": "08 · Customers — Live TV",
+    "name": "Channels by category (legacy)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/channels/category/News",
+    "auth": "bearer"
+  },
+  {
+    "id": "056",
+    "folder": "08 · Customers — Live TV",
+    "name": "Channel stream URL (legacy)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/channels/{{streamId}}/stream",
+    "auth": "bearer"
+  },
+  {
+    "id": "057",
+    "folder": "09 · Customers — VOD (Movies)",
+    "name": "VOD categories",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/vod/categories?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "058",
+    "folder": "09 · Customers — VOD (Movies)",
+    "name": "VOD content",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/vod/content?playlist_id={{playlistId}}&category_id={{categoryId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "059",
+    "folder": "09 · Customers — VOD (Movies)",
+    "name": "VOD details",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/vod/{{vodId}}/details?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "060",
+    "folder": "09 · Customers — VOD (Movies)",
+    "name": "VOD stream URL",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/vod/{{vodId}}/stream?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "061",
+    "folder": "09 · Customers — VOD (Movies)",
+    "name": "VOD proxy (bytes)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/vod/{{vodId}}/proxy?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "062",
+    "folder": "10 · Customers — Series",
+    "name": "Series categories",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/series/categories?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "063",
+    "folder": "10 · Customers — Series",
+    "name": "Series content",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/series/content?playlist_id={{playlistId}}&category_id={{categoryId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "064",
+    "folder": "10 · Customers — Series",
+    "name": "Series episodes",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/series/{{seriesId}}/episodes?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "065",
+    "folder": "10 · Customers — Series",
+    "name": "Episode stream URL",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/series/{{seriesId}}/episodes/{{episodeId}}/stream?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "066",
+    "folder": "10 · Customers — Series",
+    "name": "Episode proxy (bytes)",
+    "method": "GET",
+    "url": "{{baseUrl}}/customers/iptv/series/{{seriesId}}/episodes/{{episodeId}}/proxy?playlist_id={{playlistId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "067",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "List credit packages",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages",
+    "auth": "noauth"
+  },
+  {
+    "id": "068",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Get credit package",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages/{{creditPackageId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "069",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Create credit package",
+    "method": "POST",
+    "url": "{{baseUrl}}/credit-packages",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"Starter 100\",\n  \"credits\": 100,\n  \"price\": 50,\n  \"description\": \"100 credits for new resellers\"\n}"
+  },
+  {
+    "id": "070",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Update credit package",
+    "method": "PUT",
+    "url": "{{baseUrl}}/credit-packages/{{creditPackageId}}",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"Starter 100\",\n  \"credits\": 120,\n  \"price\": 55,\n  \"description\": \"Now with 20 bonus credits\",\n  \"isActive\": true\n}"
+  },
+  {
+    "id": "071",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Delete credit package",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/credit-packages/{{creditPackageId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "072",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Revenue stats",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages/stats",
+    "auth": "bearer"
+  },
+  {
+    "id": "073",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Bank information (payment info)",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages/bank-information",
+    "auth": "noauth"
+  },
+  {
+    "id": "074",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Purchase credit package",
+    "method": "POST",
+    "url": "{{baseUrl}}/credit-packages/purchase",
+    "auth": "bearer",
+    "body": "{\n  \"resellerId\": \"{{resellerId}}\",\n  \"creditPackageId\": \"{{creditPackageId}}\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"notes\": \"Wired from Bank X\",\n  \"bankTransferReceipt\": \"data:image/png;base64,iVBORw0KGgo=\",\n  \"bankTransferDate\": \"2026-08-18\"\n}"
+  },
+  {
+    "id": "075",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Pending bank transfers",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages/pending-bank-transfers",
+    "auth": "bearer"
+  },
+  {
+    "id": "076",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "All bank transfers",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages/bank-transfers",
+    "auth": "bearer"
+  },
+  {
+    "id": "077",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "All transactions",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages/transactions/all",
+    "auth": "bearer"
+  },
+  {
+    "id": "078",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Transactions by reseller",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages/transactions/reseller/{{resellerId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "079",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Update transaction status",
+    "method": "PUT",
+    "url": "{{baseUrl}}/credit-packages/transactions/{{transactionId}}/status",
+    "auth": "bearer",
+    "body": "{\n  \"status\": \"COMPLETED\",\n  \"adminNotes\": \"Receipt verified\"\n}"
+  },
+  {
+    "id": "080",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Create credit request (reseller)",
+    "method": "POST",
+    "url": "{{baseUrl}}/credit-packages/credit-requests",
+    "auth": "bearer",
+    "body": "{\n  \"credits\": 100,\n  \"creditPackageId\": \"{{creditPackageId}}\",\n  \"amount\": 50,\n  \"notes\": \"Monthly top-up\"\n}"
+  },
+  {
+    "id": "081",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "List credit requests (admin)",
+    "method": "GET",
+    "url": "{{baseUrl}}/credit-packages/credit-requests",
+    "auth": "bearer"
+  },
+  {
+    "id": "082",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Process credit request (admin)",
+    "method": "POST",
+    "url": "{{baseUrl}}/credit-packages/credit-requests/{{creditRequestId}}/process",
+    "auth": "bearer",
+    "body": "{\n  \"action\": \"approve\",\n  \"adminNotes\": \"Approved after receipt check\"\n}"
+  },
+  {
+    "id": "083",
+    "folder": "11 · Credit Packages & Transactions",
+    "name": "Process reseller credit request (by email)",
+    "method": "POST",
+    "url": "{{baseUrl}}/credit-packages/reseller-credit-request",
+    "auth": "bearer",
+    "body": "{\n  \"resellerEmail\": \"{{resellerEmail}}\",\n  \"credits\": 100,\n  \"duration\": \"1_MONTH\",\n  \"notes\": \"Manual grant\"\n}"
+  },
+  {
+    "id": "084",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "List IPTV packages",
+    "method": "GET",
+    "url": "{{baseUrl}}/iptv-packages",
+    "auth": "noauth"
+  },
+  {
+    "id": "085",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "Get IPTV package",
+    "method": "GET",
+    "url": "{{baseUrl}}/iptv-packages/{{iptvPackageId}}",
+    "auth": "noauth"
+  },
+  {
+    "id": "086",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "Create IPTV package",
+    "method": "POST",
+    "url": "{{baseUrl}}/iptv-packages",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"12 Months Premium\",\n  \"description\": \"Full catalogue, 12 months\",\n  \"price\": 120,\n  \"duration\": 12,\n  \"features\": [\n    \"Live TV\",\n    \"VOD\",\n    \"Series\",\n    \"4K\"\n  ]\n}"
+  },
+  {
+    "id": "087",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "Update IPTV package",
+    "method": "PUT",
+    "url": "{{baseUrl}}/iptv-packages/{{iptvPackageId}}",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"12 Months Premium\",\n  \"price\": 130,\n  \"duration\": 12,\n  \"features\": [\n    \"Live TV\",\n    \"VOD\",\n    \"Series\",\n    \"4K\",\n    \"Catch-up\"\n  ],\n  \"isActive\": true\n}"
+  },
+  {
+    "id": "088",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "Delete IPTV package",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/iptv-packages/{{iptvPackageId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "089",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "IPTV stats",
+    "method": "GET",
+    "url": "{{baseUrl}}/iptv-packages/stats",
+    "auth": "bearer"
+  },
+  {
+    "id": "090",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "Create IPTV request (reseller)",
+    "method": "POST",
+    "url": "{{baseUrl}}/iptv-packages/requests",
+    "auth": "bearer",
+    "body": "{\n  \"packageId\": \"{{iptvPackageId}}\",\n  \"duration\": 12,\n  \"notes\": \"For a new customer batch\"\n}"
+  },
+  {
+    "id": "091",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "List IPTV requests (admin)",
+    "method": "GET",
+    "url": "{{baseUrl}}/iptv-packages/requests",
+    "auth": "bearer"
+  },
+  {
+    "id": "092",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "My IPTV requests (reseller)",
+    "method": "GET",
+    "url": "{{baseUrl}}/iptv-packages/requests/reseller",
+    "auth": "bearer"
+  },
+  {
+    "id": "093",
+    "folder": "12 · IPTV Packages & Requests",
+    "name": "Process IPTV request (admin)",
+    "method": "POST",
+    "url": "{{baseUrl}}/iptv-packages/requests/{{iptvRequestId}}/process",
+    "auth": "bearer",
+    "body": "{\n  \"action\": \"approve\",\n  \"adminNotes\": \"Approved\"\n}"
+  },
+  {
+    "id": "094",
+    "folder": "13 · Subscriptions (`subcription`)",
+    "name": "List subscriptions",
+    "method": "GET",
+    "url": "{{baseUrl}}/subcription",
+    "auth": "bearer"
+  },
+  {
+    "id": "095",
+    "folder": "13 · Subscriptions (`subcription`)",
+    "name": "Get subscription",
+    "method": "GET",
+    "url": "{{baseUrl}}/subcription/{{subscriptionId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "096",
+    "folder": "13 · Subscriptions (`subcription`)",
+    "name": "Create subscription",
+    "method": "POST",
+    "url": "{{baseUrl}}/subcription",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"1 Month\",\n  \"credits\": 1,\n  \"duration\": 1,\n  \"isActive\": true\n}"
+  },
+  {
+    "id": "097",
+    "folder": "13 · Subscriptions (`subcription`)",
+    "name": "Update subscription",
+    "method": "PUT",
+    "url": "{{baseUrl}}/subcription/{{subscriptionId}}",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"1 Month\",\n  \"credits\": 1,\n  \"duration\": 1,\n  \"isActive\": true\n}"
+  },
+  {
+    "id": "098",
+    "folder": "13 · Subscriptions (`subcription`)",
+    "name": "Delete subscription",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/subcription/{{subscriptionId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "099",
+    "folder": "14 · Support Tickets",
+    "name": "Create ticket",
+    "method": "POST",
+    "url": "{{baseUrl}}/support-tickets",
+    "auth": "bearer",
+    "body": "{\n  \"title\": \"Streams buffering on channel X\",\n  \"description\": \"Since this morning, channel X buffers every few seconds.\",\n  \"priority\": \"HIGH\",\n  \"category\": \"TECHNICAL\"\n}"
+  },
+  {
+    "id": "100",
+    "folder": "14 · Support Tickets",
+    "name": "List tickets",
+    "method": "GET",
+    "url": "{{baseUrl}}/support-tickets",
+    "auth": "bearer"
+  },
+  {
+    "id": "101",
+    "folder": "14 · Support Tickets",
+    "name": "Ticket stats",
+    "method": "GET",
+    "url": "{{baseUrl}}/support-tickets/stats",
+    "auth": "bearer"
+  },
+  {
+    "id": "102",
+    "folder": "14 · Support Tickets",
+    "name": "Tickets by reseller",
+    "method": "GET",
+    "url": "{{baseUrl}}/support-tickets/reseller/{{resellerId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "103",
+    "folder": "14 · Support Tickets",
+    "name": "Get ticket",
+    "method": "GET",
+    "url": "{{baseUrl}}/support-tickets/{{ticketId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "104",
+    "folder": "14 · Support Tickets",
+    "name": "Update ticket",
+    "method": "PUT",
+    "url": "{{baseUrl}}/support-tickets/{{ticketId}}",
+    "auth": "bearer",
+    "body": "{\n  \"title\": \"Streams buffering on channel X\",\n  \"description\": \"Updated details\",\n  \"priority\": \"CRITICAL\",\n  \"category\": \"TECHNICAL\",\n  \"status\": \"IN_PROGRESS\"\n}"
+  },
+  {
+    "id": "105",
+    "folder": "14 · Support Tickets",
+    "name": "Update ticket status",
+    "method": "PUT",
+    "url": "{{baseUrl}}/support-tickets/{{ticketId}}/status",
+    "auth": "bearer",
+    "body": "{\n  \"status\": \"RESOLVED\"\n}"
+  },
+  {
+    "id": "106",
+    "folder": "14 · Support Tickets",
+    "name": "Update ticket priority",
+    "method": "PUT",
+    "url": "{{baseUrl}}/support-tickets/{{ticketId}}/priority",
+    "auth": "bearer",
+    "body": "{\n  \"priority\": \"CRITICAL\"\n}"
+  },
+  {
+    "id": "107",
+    "folder": "14 · Support Tickets",
+    "name": "Add ticket response",
+    "method": "POST",
+    "url": "{{baseUrl}}/support-tickets/{{ticketId}}/responses",
+    "auth": "bearer",
+    "body": "{\n  \"message\": \"We are looking into it — can you confirm the panel URL?\"\n}"
+  },
+  {
+    "id": "108",
+    "folder": "14 · Support Tickets",
+    "name": "List ticket responses",
+    "method": "GET",
+    "url": "{{baseUrl}}/support-tickets/{{ticketId}}/responses",
+    "auth": "bearer"
+  },
+  {
+    "id": "109",
+    "folder": "14 · Support Tickets",
+    "name": "Delete ticket",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/support-tickets/{{ticketId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "110",
+    "folder": "15 · Bank Information",
+    "name": "List bank accounts",
+    "method": "GET",
+    "url": "{{baseUrl}}/bank-information",
+    "auth": "bearer"
+  },
+  {
+    "id": "111",
+    "folder": "15 · Bank Information",
+    "name": "Active bank account",
+    "method": "GET",
+    "url": "{{baseUrl}}/bank-information/active",
+    "auth": "bearer"
+  },
+  {
+    "id": "112",
+    "folder": "15 · Bank Information",
+    "name": "Get bank account",
+    "method": "GET",
+    "url": "{{baseUrl}}/bank-information/{{bankInfoId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "113",
+    "folder": "15 · Bank Information",
+    "name": "Create bank account",
+    "method": "POST",
+    "url": "{{baseUrl}}/bank-information",
+    "auth": "bearer",
+    "body": "{\n  \"bankName\": \"Example Bank\",\n  \"accountName\": \"BeePlayer LLC\",\n  \"accountNumber\": \"1234567890\",\n  \"iban\": \"IQ00EXAM1234567890\",\n  \"swiftCode\": \"EXAMIQBA\",\n  \"branchCode\": \"001\",\n  \"isActive\": true\n}"
+  },
+  {
+    "id": "114",
+    "folder": "15 · Bank Information",
+    "name": "Update bank account",
+    "method": "PUT",
+    "url": "{{baseUrl}}/bank-information/{{bankInfoId}}",
+    "auth": "bearer",
+    "body": "{\n  \"bankName\": \"Example Bank\",\n  \"accountNumber\": \"0987654321\",\n  \"isActive\": true\n}"
+  },
+  {
+    "id": "115",
+    "folder": "15 · Bank Information",
+    "name": "Set bank account active",
+    "method": "PATCH",
+    "url": "{{baseUrl}}/bank-information/{{bankInfoId}}/set-active",
+    "auth": "bearer"
+  },
+  {
+    "id": "116",
+    "folder": "15 · Bank Information",
+    "name": "Delete bank account",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/bank-information/{{bankInfoId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "117",
+    "folder": "16 · Settings",
+    "name": "Get profile",
+    "method": "GET",
+    "url": "{{baseUrl}}/settings/profile",
+    "auth": "bearer"
+  },
+  {
+    "id": "118",
+    "folder": "16 · Settings",
+    "name": "Update profile",
+    "method": "PUT",
+    "url": "{{baseUrl}}/settings/profile",
+    "auth": "bearer",
+    "body": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@example.com\",\n  \"companyName\": \"Updated Media\",\n  \"phone\": \"+9647711111111\"\n}"
+  },
+  {
+    "id": "119",
+    "folder": "16 · Settings",
+    "name": "Change password",
+    "method": "PUT",
+    "url": "{{baseUrl}}/settings/password",
+    "auth": "bearer",
+    "body": "{\n  \"currentPassword\": \"secret123\",\n  \"newPassword\": \"newsecret123\"\n}"
+  },
+  {
+    "id": "120",
+    "folder": "16 · Settings",
+    "name": "Account stats",
+    "method": "GET",
+    "url": "{{baseUrl}}/settings/stats",
+    "auth": "bearer"
+  },
+  {
+    "id": "121",
+    "folder": "16 · Settings",
+    "name": "Delete account",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/settings/account",
+    "auth": "bearer"
+  },
+  {
+    "id": "122",
+    "folder": "17 · Activity Logs",
+    "name": "List activity logs",
+    "method": "GET",
+    "url": "{{baseUrl}}/activity-logs",
+    "auth": "bearer"
+  },
+  {
+    "id": "123",
+    "folder": "18 · Error Reports",
+    "name": "Ingest errors (public)",
+    "method": "POST",
+    "url": "{{baseUrl}}/error-reports/ingest",
+    "auth": "noauth",
+    "body": "{\n  \"events\": [\n    {\n      \"source\": \"NATIVE_APP\",\n      \"errorType\": \"PlaybackError\",\n      \"message\": \"HLS manifest failed to load\",\n      \"level\": \"ERROR\",\n      \"platform\": \"android_tv\",\n      \"appVersion\": \"1.4.2\",\n      \"deviceId\": \"stb-7f3a91\",\n      \"contentType\": \"live\",\n      \"httpStatus\": 502,\n      \"context\": {\n        \"channel\": \"BBC One\"\n      }\n    }\n  ]\n}"
+  },
+  {
+    "id": "124",
+    "folder": "18 · Error Reports",
+    "name": "Error stats (admin)",
+    "method": "GET",
+    "url": "{{baseUrl}}/error-reports/stats",
+    "auth": "bearer"
+  },
+  {
+    "id": "125",
+    "folder": "18 · Error Reports",
+    "name": "List error groups (admin)",
+    "method": "GET",
+    "url": "{{baseUrl}}/error-reports/groups",
+    "auth": "bearer"
+  },
+  {
+    "id": "126",
+    "folder": "18 · Error Reports",
+    "name": "Get error group (admin)",
+    "method": "GET",
+    "url": "{{baseUrl}}/error-reports/groups/{{errorGroupId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "127",
+    "folder": "18 · Error Reports",
+    "name": "Update error group (admin)",
+    "method": "PATCH",
+    "url": "{{baseUrl}}/error-reports/groups/{{errorGroupId}}",
+    "auth": "bearer",
+    "body": "{\n  \"status\": \"RESOLVED\",\n  \"adminNote\": \"Upstream panel fixed the manifest\"\n}"
+  },
+  {
+    "id": "128",
+    "folder": "18 · Error Reports",
+    "name": "Delete error group (admin)",
+    "method": "DELETE",
+    "url": "{{baseUrl}}/error-reports/groups/{{errorGroupId}}",
+    "auth": "bearer"
+  },
+  {
+    "id": "129",
+    "folder": "19 · Video Conversion (streaming)",
+    "name": "VOD stream",
+    "method": "GET",
+    "url": "{{baseUrl}}/video-conversion/vod/stream?url=http%3A%2F%2Fpanel.example.com%2Fmovie%2Fu%2Fp%2F12345.mkv",
+    "auth": "bearer"
+  },
+  {
+    "id": "130",
+    "folder": "19 · Video Conversion (streaming)",
+    "name": "Series episode stream",
+    "method": "GET",
+    "url": "{{baseUrl}}/video-conversion/series/stream?url=http%3A%2F%2Fpanel.example.com%2Fseries%2Fu%2Fp%2F67890.mkv",
+    "auth": "bearer"
+  },
+  {
+    "id": "131",
+    "folder": "19 · Video Conversion (streaming)",
+    "name": "Test proxy",
+    "method": "GET",
+    "url": "{{baseUrl}}/video-conversion/test?url=http%3A%2F%2Fpanel.example.com%2Fmovie%2Fu%2Fp%2F12345.mp4",
+    "auth": "bearer"
+  },
+  {
+    "id": "132",
+    "folder": "20 · Uploads",
+    "name": "Serve receipt",
+    "method": "GET",
+    "url": "{{baseUrl}}/uploads/receipts/receipt-example.png",
+    "auth": "bearer"
+  }
+]
