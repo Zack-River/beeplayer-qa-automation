@@ -35,7 +35,6 @@ test.describe("Functional Tests - Resellers (SCN-F-03)", () => {
         name: "QA Auto Reseller",
         email: dynamicEmail,
         password: "password123",
-        status: 1,
       },
     });
 
@@ -46,7 +45,7 @@ test.describe("Functional Tests - Resellers (SCN-F-03)", () => {
     const data = await response.json();
 
     // Extract ID (handling both flat and nested responses)
-    const resellerId = data.id || (data.data && data.data.id);
+    const resellerId = data.id || (data.reseller && data.reseller.id) || (data.data && data.data.id);
     expect(resellerId).toBeDefined();
 
     // Register cleanup (SR-05)

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: beeplayer-staging-db
+    environment:
+      POSTGRES_USER: beeplayer_user
+      POSTGRES_PASSWORD: beeplayer_pass
+      POSTGRES_DB: beeplayer_staging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U beeplayer_user -d beeplayer_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ../../Web/Backend/beeplayer-backend
+      dockerfile: Dockerfile
+    container_name: beeplayer-staging-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://beeplayer_user:beeplayer_pass@db:5432/beeplayer_staging?schema=public
+      - JWT_SECRET=ephemeral_staging_secret_key_12345
+      - PORT=4301
+      - NODE_ENV=production
+      - CORS_ORIGINS=http://localhost:3000
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - CUSTOMER_USERNAME=${CUSTOMER_USERNAME}
+      - CUSTOMER_PASSWORD=${CUSTOMER_PASSWORD}
+    ports:
+      - "4301:4301"
+    # Execute migrations, run the staging seed, and then start the API
+    command: sh -c "npx prisma migrate deploy && node prisma/seed-staging.js && node dist/src/main.js"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4301/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s

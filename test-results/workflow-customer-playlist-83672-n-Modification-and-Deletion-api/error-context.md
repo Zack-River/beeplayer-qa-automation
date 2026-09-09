@@ -12,82 +12,94 @@
 # Error details
 
 ```
-Error: expect(received).toBeTruthy()
-
-Received: false
+TypeError: Cannot read properties of undefined (reading 'includes')
 ```
 
 # Test source
 
 ```ts
-  1  | import { test, expect } from '@playwright/test';
-  2  | import { SafetyGate } from '../../src/config/safety-gate';
-  3  | import { AuthManager, AuthContext } from '../../src/core/auth-manager';
-  4  | import { CleanupManager } from '../../src/core/cleanup-manager';
-  5  | import * as path from 'path';
-  6  | 
-  7  | test.describe('Workflow Tests - Playlist Lifecycle (SCN-W-02 / CWF-07)', () => {
-  8  |   const targetUrl = process.env.BASE_URL || 'https://api.beeplayer1.com';
-  9  |   const rootDir = path.resolve(__dirname, '../../');
-  10 |   
-  11 |   let customerAuth: AuthContext;
-  12 |   let cleanupManager: CleanupManager;
-  13 | 
-  14 |   test.beforeAll(async ({ request }) => {
-  15 |     SafetyGate.enforceFunctionalProduction(targetUrl, rootDir);
-  16 |     // Use the provided customer credentials
-  17 |     customerAuth = await AuthManager.loginCustomer(request, targetUrl);
-  18 |   });
+  1  | import * as fs from 'fs';
+  2  | import * as path from 'path';
+  3  | import * as yaml from 'js-yaml';
+  4  | 
+  5  | export interface AuthorizationDoc {
+  6  |   authorization: {
+  7  |     type: string;
+  8  |     authorized_by: string;
+  9  |     authorized_at: string;
+  10 |     expires_at: string;
+  11 |     target_url: string;
+  12 |     scope: string[];
+  13 |     test_accounts_confirmed_disposable: boolean;
+  14 |     destructive_operations_authorized: boolean;
+  15 |     load_testing_authorized: boolean;
+  16 |     notes?: string;
+  17 |   }
+  18 | }
   19 | 
-  20 |   test.beforeEach(() => {
-  21 |     cleanupManager = new CleanupManager();
-  22 |   });
-  23 | 
-  24 |   test.afterEach(async ({ request }) => {
-  25 |     const result = await cleanupManager.executeAll(request);
-  26 |     expect(result.errors).toHaveLength(0); // Fails the test if cleanup fails
-  27 |   });
+  20 | export class SafetyGate {
+  21 |   private static parseDoc(filePath: string): AuthorizationDoc {
+  22 |     if (!fs.existsSync(filePath)) {
+  23 |       throw new Error(`[SAFETY GATE FAILED] Required authorization document not found: ${filePath}`);
+  24 |     }
+  25 |     const fileContent = fs.readFileSync(filePath, 'utf-8');
+  26 |     return yaml.load(fileContent) as AuthorizationDoc;
+  27 |   }
   28 | 
-  29 |   test('TC-W-02: End-to-end Playlist Creation, Modification, and Deletion', async ({ request }) => {
-  30 |     const dynamicMac = `00:1A:2B:3C:${Math.floor(Math.random() * 90 + 10)}:${Math.floor(Math.random() * 90 + 10)}`;
-  31 |     
-  32 |     // Step 1: Create Playlist (POST /customers/playlists)
-  33 |     const createResponse = await request.post(`${targetUrl}/customers/playlists`, {
-  34 |       headers: { 'Authorization': `Bearer ${customerAuth.token}` },
-  35 |       data: {
-  36 |         mac_address: dynamicMac,
-  37 |         pin: '1234'
-  38 |       }
-  39 |     });
-  40 | 
-  41 |     // Note: If we don't know the exact schema, this might 400. We log it as a TEST_FAILURE.
-> 42 |     expect(createResponse.ok()).toBeTruthy();
-     |                                 ^ Error: expect(received).toBeTruthy()
-  43 |     const createData = await createResponse.json();
-  44 |     
-  45 |     // Extract ID (handling both flat and nested responses)
-  46 |     const playlistId = createData.id || (createData.data && createData.data.id);
-  47 |     expect(playlistId).toBeDefined();
-  48 | 
-  49 |     // Register cleanup (SR-05) immediately
-  50 |     cleanupManager.register({
-  51 |       method: 'DELETE',
-  52 |       url: `${targetUrl}/customers/playlists/${playlistId}`,
-  53 |       token: customerAuth.token,
-  54 |       description: `Delete playlist ${playlistId}`
-  55 |     });
-  56 | 
-  57 |     // Step 2: Modify Playlist (PUT /customers/playlists/{id})
-  58 |     const updateResponse = await request.put(`${targetUrl}/customers/playlists/${playlistId}`, {
-  59 |       headers: { 'Authorization': `Bearer ${customerAuth.token}` },
-  60 |       data: {
-  61 |         pin: '4321'
-  62 |       }
-  63 |     });
-  64 |     expect(updateResponse.ok()).toBeTruthy();
-  65 | 
-  66 |     // Step 3: Cleanup will automatically run in afterEach, validating the DELETE endpoint.
-  67 |   });
-  68 | });
-  69 | 
+  29 |   private static validateCommon(doc: AuthorizationDoc, targetUrl: string) {
+  30 |     if (doc.authorization.target_url !== targetUrl) {
+  31 |       throw new Error(`[SAFETY GATE FAILED] target_url mismatch. Expected ${targetUrl}, got ${doc.authorization.target_url}`);
+  32 |     }
+  33 | 
+  34 |     const expiresAt = new Date(doc.authorization.expires_at);
+  35 |     if (expiresAt < new Date()) {
+  36 |       throw new Error(`[SAFETY GATE FAILED] Authorization document expired at ${expiresAt.toISOString()}`);
+  37 |     }
+  38 | 
+  39 |     if (doc.authorization.test_accounts_confirmed_disposable !== true) {
+  40 |       throw new Error(`[SAFETY GATE FAILED] test_accounts_confirmed_disposable must be true.`);
+  41 |     }
+  42 |   }
+  43 | 
+  44 |   public static enforceFunctionalProduction(targetUrl: string, baseDir: string = process.cwd()) {
+  45 |     // Only enforce if we're hitting production
+> 46 |     if (!targetUrl.includes('api.beeplayer1.com')) return;
+     |                    ^ TypeError: Cannot read properties of undefined (reading 'includes')
+  47 | 
+  48 |     const docPath = path.resolve(baseDir, 'docs/execution/production-authorization.md');
+  49 |     const doc = this.parseDoc(docPath);
+  50 | 
+  51 |     if (doc.authorization.type !== 'functional-production') {
+  52 |       throw new Error(`[SAFETY GATE FAILED] Document type must be functional-production`);
+  53 |     }
+  54 | 
+  55 |     this.validateCommon(doc, targetUrl);
+  56 |   }
+  57 | 
+  58 |   public static enforceLoadProduction(targetUrl: string, baseDir: string = process.cwd()) {
+  59 |     // Only enforce if we're hitting production
+  60 |     if (!targetUrl.includes('api.beeplayer1.com')) return;
+  61 | 
+  62 |     // Must pass functional first (SR-02 rule)
+  63 |     this.enforceFunctionalProduction(targetUrl, baseDir);
+  64 | 
+  65 |     const docPath = path.resolve(baseDir, 'docs/execution/load-production-approval.md');
+  66 |     const doc = this.parseDoc(docPath);
+  67 | 
+  68 |     if (doc.authorization.type !== 'load-production') {
+  69 |       throw new Error(`[SAFETY GATE FAILED] Document type must be load-production`);
+  70 |     }
+  71 | 
+  72 |     if (doc.authorization.load_testing_authorized !== true) {
+  73 |       throw new Error(`[SAFETY GATE FAILED] load_testing_authorized must be true.`);
+  74 |     }
+  75 | 
+  76 |     if (doc.authorization.destructive_operations_authorized === true) {
+  77 |       throw new Error(`[SAFETY GATE FAILED] Destructive operations can never be authorized for load tests.`);
+  78 |     }
+  79 | 
+  80 |     this.validateCommon(doc, targetUrl);
+  81 |   }
+  82 | }
+  83 | 
 ```

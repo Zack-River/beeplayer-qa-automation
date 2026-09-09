@@ -29,16 +29,15 @@ test.describe("Workflow Tests - Playlist Lifecycle (SCN-W-02 / CWF-07)", () => {
   test("TC-W-02: End-to-end Playlist Creation, Modification, and Deletion", async ({
     request,
   }) => {
-    const dynamicMac = `00:1A:2B:3C:${Math.floor(Math.random() * 90 + 10)}:${Math.floor(Math.random() * 90 + 10)}`;
-
     // Step 1: Create Playlist (POST /customers/playlists)
     const createResponse = await request.post(
       `${targetUrl}/customers/playlists`,
       {
         headers: { Authorization: `Bearer ${customerAuth.token}` },
         data: {
-          mac_address: dynamicMac,
-          pin: "1234",
+          name: "QA End-to-End Playlist",
+          url: "https://example.com/playlist.m3u",
+          type: "m3u",
         },
       },
     );
@@ -65,7 +64,7 @@ test.describe("Workflow Tests - Playlist Lifecycle (SCN-W-02 / CWF-07)", () => {
       {
         headers: { Authorization: `Bearer ${customerAuth.token}` },
         data: {
-          pin: "4321",
+          name: "QA End-to-End Playlist - Updated",
         },
       },
     );

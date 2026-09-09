@@ -28,7 +28,27 @@ export default defineConfig({
   projects: [
     {
       name: "api",
+      testDir: "./tests",
+      // Exclude frontend tests from the API suite
+      testIgnore: "**/frontend/**",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "frontend-ui",
+      testDir: "./tests/frontend",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:3013",
+        launchOptions: {
+          args: ["--autoplay-policy=no-user-gesture-required"],
+        },
+      },
+    },
   ],
+  webServer: {
+    command: "cd ../Web/Frontend/beeplyer-frontend && NEXT_PUBLIC_API_URL=http://localhost:4301 npm run dev",
+    url: "http://localhost:3013",
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
 });
